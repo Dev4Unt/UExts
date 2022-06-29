@@ -18,20 +18,35 @@ namespace UExts.SDG.Unturned.Players
 
             for (byte page = 0; page < PlayerInventory.PAGES - 2; page += 1)
             {
-                for (byte index = 0; index < source[page].items.Count; index++)
-                {
-                    ItemJar itemJar = source[page].getItem(index);
+                source[page].Clear(onBeforeItemRemovedCallback, onItemRemovedCallback, onItemRemoveCanceled);
+            }
 
-                    bool? allow = onBeforeItemRemovedCallback?.Invoke(itemJar);
-                    if (allow.HasValue && allow.Value)
-                    {
-                        RemoveItem(source, page, index);
-                        onItemRemovedCallback?.Invoke(itemJar);
-                    }
-                    else
-                    {
-                        onItemRemoveCanceled?.Invoke(itemJar);
-                    }
+            return source;
+        }
+
+        public static Items Clear(this Items source,
+            Predicate<ItemJar> onBeforeItemRemovedCallback = null,
+            Action<ItemJar> onItemRemovedCallback = null,
+            Action<ItemJar> onItemRemoveCanceled = null)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            for (byte index = 0; index < source.items.Count; index++)
+            {
+                ItemJar itemJar = source.getItem(index);
+
+                bool? allow = onBeforeItemRemovedCallback?.Invoke(itemJar);
+                if (allow.HasValue && allow.Value)
+                {
+                    RemoveItem(source, index);
+                    onItemRemovedCallback?.Invoke(itemJar);
+                }
+                else
+                {
+                    onItemRemoveCanceled?.Invoke(itemJar);
                 }
             }
 
