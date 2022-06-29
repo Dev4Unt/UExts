@@ -16,9 +16,9 @@ namespace UExts.SDG.Unturned.Players
                 throw new ArgumentNullException(nameof(source));
             }
 
-            for (byte page = 0; page < PlayerInventory.PAGES; page += 1)
+            for (byte index = 0; index < source.Length; index += 1)
             {
-                source[page].Clear(onBeforeItemRemovedCallback, onItemRemovedCallback, onItemRemoveCanceled);
+                source[index].Clear(onBeforeItemRemovedCallback, onItemRemovedCallback, onItemRemoveCanceled);
             }
 
             return source;
