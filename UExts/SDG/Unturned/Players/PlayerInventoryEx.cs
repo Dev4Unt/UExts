@@ -15,25 +15,7 @@ namespace UExts.SDG.Unturned.Players
                 throw new ArgumentNullException(nameof(source));
             }
 
-            for (byte p = 0; p < PlayerInventory.PAGES - 2; p += 1)
-            {
-                for (byte i = 0; i < source.items[p].items.Count; i++)
-                {
-                    ItemJar itemJar = source.items[p].getItem(i);
-
-                    bool? allow = onBeforeItemRemovedCallback?.Invoke(itemJar);
-                    if (allow.HasValue && allow.Value)
-                    {
-                        source.removeItem(p, i);
-                        onItemRemovedCallback?.Invoke(itemJar);
-                    }
-                    else
-                    {
-                        onItemRemoveCanceled?.Invoke(itemJar);
-                    }
-                }
-            }
-
+            source.items.Clear(onBeforeItemRemovedCallback, onItemRemovedCallback, onItemRemoveCanceled);
             return source;
         }
     }
