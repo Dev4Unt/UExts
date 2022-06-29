@@ -1,6 +1,5 @@
 ﻿using SDG.Unturned;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace UExts.SDG.Unturned.Players
@@ -124,6 +123,10 @@ namespace UExts.SDG.Unturned.Players
         }
 
         public static InteractableStorage DropPlayerItemsIntoStorageIfFailedDropIt(this InteractableStorage source, Player player, Vector3 position,
+            bool isStateUpdatable, bool playEffect, bool isDropped, bool wideSpread,
+            Predicate<ItemJar> onBeforeItemRemovedCallback = null,
+            Action<ItemJar> onItemRemovedCallback = null,
+            Action<ItemJar> onItemRemoveCanceled = null,
             Action<Item> onItemAdded = null,
             Action<Item> onItemDropped = null,
             Action<Item> onBeforeItemDropped = null)
@@ -138,31 +141,39 @@ namespace UExts.SDG.Unturned.Players
                 throw new ArgumentNullException(nameof(player));
             }
 
+
             for (byte page = 0; page < PlayerInventory.PAGES - 2; page++)
             {
-                Items items = player.inventory.items[page];
-                List<ItemJar> itemsJar = items.items;
-                for (int i = itemsJar.Count - 1; i >= 0; i--)
-                {
-                    ItemJar itemJar = itemsJar[i];
-                    if (itemJar != null)
-                    {
-                        TryAddItemToStorageIfFailedDropIt(source, itemJar.item, position,
-                            onItemAdded, onItemDropped, onBeforeItemDropped);
-                    }
-                }
+                player.inventory.items[page].TransferItemsIfFailedToAddDropItToAnotherAndReturnIt(source.items, position,
+                    isStateUpdatable, playEffect, isDropped, wideSpread,
+                    onBeforeItemRemovedCallback, onItemRemovedCallback, onItemRemoveCanceled, onItemAdded, onItemDropped, onBeforeItemDropped);
             }
 
             return source;
         }
 
         public static InteractableStorage DropPlayerItemsIntoStorageIfFailedDropIt(this InteractableStorage source, Player player,
+            bool isStateUpdatable, bool playEffect, bool isDropped, bool wideSpread,
+            Predicate<ItemJar> onBeforeItemRemovedCallback = null,
+            Action<ItemJar> onItemRemovedCallback = null,
+            Action<ItemJar> onItemRemoveCanceled = null,
             Action<Item> onItemAdded = null,
             Action<Item> onItemDropped = null,
             Action<Item> onBeforeItemDropped = null)
         {
-            return DropPlayerItemsIntoStorageIfFailedDropIt(source, player, player.transform.position,
-                onItemAdded, onItemDropped, onBeforeItemDropped);
+            if (player == null)
+            {
+                throw new ArgumentNullException(nameof(player));
+            }
+
+            for (byte page = 0; page < PlayerInventory.PAGES - 2; page++)
+            {
+                player.inventory.items[page].TransferItemsIfFailedToAddDropItToAnotherAndReturnIt(source.items, player.transform.position,
+                    isStateUpdatable, playEffect, isDropped, wideSpread,
+                    onBeforeItemRemovedCallback, onItemRemovedCallback, onItemRemoveCanceled, onItemAdded, onItemDropped, onBeforeItemDropped);
+            }
+                
+            return source;
         }
     }
 }
