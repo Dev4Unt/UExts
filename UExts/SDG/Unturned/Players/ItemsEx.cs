@@ -4,147 +4,232 @@ using UnityEngine;
 
 namespace UExts.SDG.Unturned.Players
 {
+    public class DropItemInfo
+    {
+        public Vector3 Point { get; set; }
+        public bool PlayEffect { get; set; }
+        public bool IsDropped { get; set; }
+        public bool WideSpread { get; set; }
+    }
+
+
     public static class ItemsEx
     {
-        public static Items[] Clear(this Items[] source,
-            Predicate<ItemJar> onBeforeItemRemovedCallback = null,
-            Action<ItemJar> onItemRemovedCallback = null,
-            Action<ItemJar> onItemRemoveCanceled = null)
+        public static Items Clear(this Items source)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            for (byte index = 0; index < source.Length; index += 1)
+            byte itemsCount = source.getItemCount();
+            for (byte index = 0; index < itemsCount; index++)
             {
-                source[index].Clear(onBeforeItemRemovedCallback, onItemRemovedCallback, onItemRemoveCanceled);
+                source.removeItem(0);
             }
 
             return source;
         }
-
-        public static Items Clear(this Items source,
-            Predicate<ItemJar> onBeforeItemRemovedCallback = null,
-            Action<ItemJar> onItemRemovedCallback = null,
-            Action<ItemJar> onItemRemoveCanceled = null)
+        public static Items Clear(this Items source, Predicate<ItemJar> predicate)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
-
-            for (byte index = 0; index < source.items.Count; index++)
+            if (predicate == null)
             {
-                ItemJar itemJar = source.getItem(index);
+                return source.Clear();
+            }
 
-                bool? allow = onBeforeItemRemovedCallback?.Invoke(itemJar);
-                if (allow.HasValue && allow.Value)
+            byte itemsCount = source.getItemCount();
+            byte skipCount = 0;
+            for (byte index = 0; index < itemsCount; index++)
+            {
+                ItemJar item = source.getItem(index);
+                if (predicate.Invoke(item))
                 {
-                    RemoveItem(source, index);
-                    onItemRemovedCallback?.Invoke(itemJar);
+                    source.removeItem(skipCount);
                 }
                 else
                 {
-                    onItemRemoveCanceled?.Invoke(itemJar);
+                    skipCount++;
                 }
             }
 
             return source;
         }
 
-        public static Items TransferItemsIfFailedToAddDropItToAnotherAndReturnIt(this Items source, Items target, Vector3 position,
-            bool isStateUpdatable, bool playEffect, bool isDropped, bool wideSpread,
-            Predicate<ItemJar> onBeforeItemRemovedCallback = null,
-            Action<ItemJar> onItemRemovedCallback = null,
-            Action<ItemJar> onItemRemoveCanceled = null,
-            Action<Item> onItemAdded = null,
-            Action<Item> onItemDropped = null,
-            Action<Item> onBeforeItemDropped = null)
+        public static Items Drop(this Items source, Vector3 point, bool playEffect, bool isDropped, bool wideSpread)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
 
-            if (target == null)
+            byte itemsCount = source.getItemCount();
+            for (byte index = 0; index < itemsCount; index++)
             {
-                throw new ArgumentNullException(nameof(target));
+                ItemManager.dropItem(source.getItem(index).item, point, playEffect, isDropped, wideSpread);
             }
 
-
-            for (byte i = 0; i < source.items.Count; i++)
+            return source;
+        }
+        public static Items Drop(this Items source, Func<ItemJar, DropItemInfo> func)
+        {
+            if (source == null)
             {
-                ItemJar itemJar = source.getItem(i);
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (func == null)
+            {
+                throw new ArgumentNullException(nameof(func));
+            }
 
-                bool? allow = onBeforeItemRemovedCallback?.Invoke(itemJar);
-                if (allow.HasValue && allow.Value)
+            byte itemsCount = source.getItemCount();
+            for (byte index = 0; index < itemsCount; index++)
+            {
+                DropItemInfo info = func.Invoke(source.getItem(index));
+                if (info != null)
                 {
-                    TryAddItemIfFailedDropIt(source, itemJar.item, position,
-                        isStateUpdatable, playEffect, isDropped, wideSpread,
-                        onItemAdded, onItemDropped, onBeforeItemDropped);
-                    RemoveItem(source, i);
-                    onItemRemovedCallback?.Invoke(itemJar);
+                    ItemManager.dropItem(source.getItem(index).item, info.Point, info.PlayEffect, info.IsDropped, info.WideSpread);
+                }
+            }
+
+            return source;
+        }
+
+        public static Items Move(this Items source, Items output, Predicate<ItemJar> onItemNeedMoreSpace)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+            if (onItemNeedMoreSpace == null)
+            {
+                throw new ArgumentNullException(nameof(onItemNeedMoreSpace));
+            }
+
+            byte itemsCount = source.getItemCount();
+            byte skipCount = 0;
+            for (byte index = 0; index < itemsCount; index++)
+            {
+                ItemJar item = source.getItem(skipCount);
+                if (output.tryAddItem(item.item) == false && onItemNeedMoreSpace.Invoke(item) == false)
+                {
+                    skipCount++;
                 }
                 else
                 {
-                    onItemRemoveCanceled?.Invoke(itemJar);
+                    source.removeItem(skipCount);
                 }
             }
 
-            return target;
+            return source;
         }
-
-        public static Items TryAddItemIfFailedDropIt(this Items source, Item item, Vector3 position,
-            bool isStateUpdatable, bool playEffect, bool isDropped, bool wideSpread,
-            Action<Item> onItemAdded = null,
-            Action<Item> onItemDropped = null,
-            Action<Item> onBeforeItemDropped = null)
+        public static Items Move(this Items source, Items output, Predicate<ItemJar> onItemNeedMoreSpace, Predicate<ItemJar> predicate)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
-
-            if (item == null)
+            if (output == null)
             {
-                throw new ArgumentNullException(nameof(item));
+                throw new ArgumentNullException(nameof(output));
+            }
+            if (onItemNeedMoreSpace == null)
+            {
+                throw new ArgumentNullException(nameof(onItemNeedMoreSpace));
+            }
+            if (predicate == null)
+            {
+                return source.Move(output, onItemNeedMoreSpace);
             }
 
-            if (source.tryAddItem(item, isStateUpdatable) == false)
+            byte itemsCount = source.getItemCount();
+            byte skipCount = 0;
+            for (byte index = 0; index < itemsCount; index++)
             {
-                onBeforeItemDropped?.Invoke(item);
-                ItemManager.dropItem(item, position, playEffect, isDropped, wideSpread);
-                onItemDropped?.Invoke(item);
-            }
-            else
-            {
-                onItemAdded?.Invoke(item);
+                ItemJar item = source.getItem(skipCount);
+                if (predicate.Invoke(item))
+                {
+                    if (output.tryAddItem(item.item) == false && onItemNeedMoreSpace.Invoke(item))
+                    {
+                        skipCount++;
+                    }
+                    else
+                    {
+                        source.removeItem(skipCount);
+                    }
+                }
+                else
+                {
+                    skipCount++;
+                }
             }
 
             return source;
         }
 
-        public static Items RemoveItem(this Items source, byte index)
+        public static Items Copy(this Items source, Items output, Action<ItemJar> onItemNeedMoreSpace)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+            if (onItemNeedMoreSpace == null)
+            {
+                throw new ArgumentNullException(nameof(onItemNeedMoreSpace));
+            }
 
-            source.removeItem(index);
+            byte itemsCount = source.getItemCount();
+            for (byte index = 0; index < itemsCount; index++)
+            {
+                ItemJar item = source.getItem(index);
+                if (output.tryAddItem(item.item) == false)
+                {
+                    onItemNeedMoreSpace.Invoke(item);
+                }
+            }
 
             return source;
         }
-
-        public static Items[] RemoveItem(this Items[] source, byte page, byte index)
+        public static Items Copy(this Items source, Items output, Action<ItemJar> onItemNeedMoreSpace, Predicate<ItemJar> predicate)
         {
             if (source == null)
             {
                 throw new ArgumentNullException(nameof(source));
             }
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+            if (onItemNeedMoreSpace == null)
+            {
+                throw new ArgumentNullException(nameof(onItemNeedMoreSpace));
+            }
+            if (predicate == null)
+            {
+                return source.Copy(output, onItemNeedMoreSpace);
+            }
 
-            source[page].removeItem(index);
+            byte itemsCount = source.getItemCount();
+            for (byte index = 0; index < itemsCount; index++)
+            {
+                ItemJar item = source.getItem(index);
+                if (predicate.Invoke(item) && output.tryAddItem(item.item) == false)
+                {
+                    onItemNeedMoreSpace.Invoke(item);
+                }
+            }
+
             return source;
         }
     }
