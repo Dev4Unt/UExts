@@ -28,11 +28,6 @@ namespace UExts.SDG.Unturned.Players
 
         public static PlayerInventory Clear(this PlayerInventory source, PlayerInventoryPages page, Predicate<ItemJar> predicate)
         {
-            if (source == null)
-            {
-                throw new ArgumentNullException(nameof(source));
-            }
-
             _ = (page & PlayerInventoryPages.Slot1) == PlayerInventoryPages.Slot1 ? source.items[0]?.Clear(predicate) : null;
             _ = (page & PlayerInventoryPages.Slot2) == PlayerInventoryPages.Slot2 ? source.items[1]?.Clear(predicate) : null;
             _ = (page & PlayerInventoryPages.Backpack) == PlayerInventoryPages.Backpack ? source.items[2]?.Clear(predicate) : null;
