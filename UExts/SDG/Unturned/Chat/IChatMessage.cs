@@ -18,6 +18,6 @@ namespace UExts.SDG.Unturned.Chat
 
         Uri Icon { get; set; }
 
-        bool Rich { get; set;  }
+        bool Rich { get; set; }
     }
 }
