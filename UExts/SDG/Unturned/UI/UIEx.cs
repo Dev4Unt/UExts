@@ -4,9 +4,9 @@ namespace UExts.SDG.Unturned.UI
 {
     public static class UIEx
     {
-        public static Player DisableEverythingInUI(this Player source)
+        public static Player EnableEverythingInUI(this Player source)
         {
-            source.disablePluginWidgetFlag(EPluginWidgetFlags.Modal
+            source.enablePluginWidgetFlag(EPluginWidgetFlags.Modal
                 | EPluginWidgetFlags.ShowHealth
                 | EPluginWidgetFlags.ShowFood
                 | EPluginWidgetFlags.ShowWater
@@ -21,9 +21,9 @@ namespace UExts.SDG.Unturned.UI
             return source;
         }
 
-        public static Player EnableEverythingInUI(this Player source)
+        public static Player DisableEverythingInUI(this Player source)
         {
-            source.enablePluginWidgetFlag(EPluginWidgetFlags.Modal
+            source.disablePluginWidgetFlag(EPluginWidgetFlags.Modal
                 | EPluginWidgetFlags.ShowHealth
                 | EPluginWidgetFlags.ShowFood
                 | EPluginWidgetFlags.ShowWater
