@@ -15,7 +15,7 @@ namespace UExts.SDG.Unturned.Players
         Pants = 32,
         Clothes = 60,
         Storage = 64,
-        All = 127,
+        All = 63, // SLOTS -> Clothes -> 
         Area = 128
     }
     
